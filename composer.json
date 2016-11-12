@@ -1,0 +1,15 @@
+{
+  "name": "ents/amember-mastercontrol",
+  "description": "aMember Pro plugin for ENTS MasterControl",
+  "minimum-stability": "stable",
+  "license": "GPL-3.0",
+  "authors": [
+    {
+      "name": "Travis Ralston",
+      "email": "travis.ralston@ents.ca"
+    }
+  ],
+  "require": {
+    "php-amqplib/php-amqplib": "2.6.*"
+  }
+}
