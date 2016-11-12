@@ -45,50 +45,61 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $form->addFieldsPrefix("misc.ents-mastercontrol.");
     }
 
-    function onUserAfterInsert(Am_Event $event) {
+    function onUserAfterInsert(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onUserAfterUpdate(Am_Event $event) {
+    function onUserAfterUpdate(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onAccessAfterInsert(Am_Event $event) {
+    function onAccessAfterInsert(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getAccess()->getUser()));
     }
 
-    function onAccessAfterUpdate(Am_Event $event) {
+    function onAccessAfterUpdate(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getAccess()->getUser()));
     }
 
-    function onAccessAfterDelete(Am_Event $event) {
+    function onAccessAfterDelete(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getAccess()->getUser()));
     }
 
-    function onSubscriptionAdded(Am_Event $event) {
+    function onSubscriptionAdded(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onSubscriptionChanged(Am_Event $event) {
+    function onSubscriptionChanged(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onSubscriptionUpdated(Am_Event $event) {
+    function onSubscriptionUpdated(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onSubscriptionDeleted(Am_Event $event) {
+    function onSubscriptionDeleted(Am_Event $event)
+    {
         $this->sendMemberEvents(array($event->getUser()));
     }
 
-    function onDaily(Am_Event $event) {
+    function onDaily(Am_Event $event)
+    {
         $usersTable = $this->getDi()->userTable;
         $users = $usersTable->selectObjects("SELECT * FROM ?_user");
         $this->sendMemberEvents($users);
     }
 
-    private function sendMemberEvents(array $members) {
-        if(!$this->isConfigured()) return;
+    private function sendMemberEvents(array $members)
+    {
+        if (!$this->isConfigured()) return;
         $host = $this->getConfig("mq.host");
         $port = (int)$this->getConfig("mq.port");
         $username = $this->getConfig("mq.username");
@@ -96,7 +107,7 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $vhost = $this->getConfig("mq.vhost", "/");
         $exchange = $this->getConfig("mq.exchange", "ents-members");
 
-        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection($host,$port,$username,$password,$vhost);
+        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection($host, $port, $username, $password, $vhost);
         $channel = $connection->channel();
 
         foreach ($members as $member) {
@@ -108,7 +119,8 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $connection->close();
     }
 
-    private function buildUserMessage(User $member){
+    private function buildUserMessage(User $member)
+    {
         // Build the base message first
         $obj = array(
             "type" => "MEMBER_UPDATED",
@@ -129,15 +141,15 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         // Copy the custom fields into the object, if possible
         $userCustomFields = $this->getDi()->userTable->customFields();
 
-        if($userCustomFields->get("fob"))
+        if ($userCustomFields->get("fob"))
             $obj["fob_number"] = $member->fob;
-        if($userCustomFields->get("nickname"))
+        if ($userCustomFields->get("nickname"))
             $obj["nickname"] = $member->nickname;
-        if($userCustomFields->get("announce"))
+        if ($userCustomFields->get("announce"))
             $obj["door_access"]["announce"] = in_array("announce", $member->announce) ? true : false;
-        if($userCustomFields->get("fob_access"))
+        if ($userCustomFields->get("fob_access"))
             $obj["door_access"]["access_type"] = $member->fob_access ? $member->fob_access : "subscription";
-        if($userCustomFields->get("roles"))
+        if ($userCustomFields->get("roles"))
             $obj["is_director"] = in_array("Director", $member->roles) ? true : false;
 
         // Populate the access records
@@ -145,7 +157,7 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $bufferDays = $this->getConfig("buffer_days");
         $accessRecords = $accessTable->findBy(array("user_id" => $member->user_id));
         foreach ($accessRecords as $record) {
-            if($record->expire_date < date_add(time(), date_interval_create_from_date_string($bufferDays . " days")))
+            if ($record->expire_date < date_add(time(), date_interval_create_from_date_string($bufferDays . " days")))
                 continue; // out of date record - no longer applies
             $obj["door_access"]["access"][] = array(
                 "start" => $record->begin_date,
