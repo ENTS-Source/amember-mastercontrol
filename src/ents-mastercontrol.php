@@ -170,4 +170,15 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $json = json_encode($obj);
         return new \PhpAmqpLib\Message\AMQPMessage($json);
     }
+
+    function getReadme()
+    {
+        return <<<CUT
+This plugin pushes changes made to users to a message queue. Tracked changes include creating and updating users, access records, and subscriptions.
+
+Plugin created by ENTS (Edmonton New Technology Society)
+* Source: https://github.com/ENTS-Source/amember-mastercontrol
+* For help and support please contact us: https://ents.ca/contact/
+CUT;
+    }
 }
