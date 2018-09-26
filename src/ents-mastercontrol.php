@@ -8,6 +8,7 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
     const PLUGIN_STATUS = self::STATUS_PRODUCTION;
     const PLUGIN_COMM = self::COMM_FREE;
     const PLUGIN_REVISION = "1.0.0";
+    const ADMIN_USER_SETTINGS_PERM_ID = 'mastercontrol-user-settings';
 
     private $depsLoaded = false;
 
@@ -43,6 +44,28 @@ class Am_Plugin_EntsMastercontrol extends Am_Plugin
         $fs->addInteger("buffer_days")->setLabel(___("Expired Subscription Buffer (days)"))->addRule('gte', 0.0);
 
         $form->addFieldsPrefix("misc.ents-mastercontrol.");
+    }
+
+    function onGetPermissionsList(Am_Event $e)
+    {
+        $e->addReturn(___('MasterControl User Settings'), self::ADMIN_USER_SETTINGS_PERM_ID);
+    }
+
+    function onUserTabs(Am_Event_UserTabs $e)
+    {
+        if ($e->getUserId() <= 0) return;
+
+        $e->getTabs()->addPage(array(
+            'id' => 'mastercontrol',
+            'controller' => 'admin-mastercontrol',
+            'action' => 'index',
+            'params' => array(
+                'user_id' => $e->getUserId(),
+            ),
+            'label' => ___('MasterControl'),
+            'order' => 1000,
+            'resource' => self::ADMIN_USER_SETTINGS_PERM_ID,
+        ));
     }
 
     function onUserAfterInsert(Am_Event $event)
@@ -180,5 +203,50 @@ Plugin created by ENTS (Edmonton New Technology Society)
 * Source: https://github.com/ENTS-Source/amember-mastercontrol
 * For help and support please contact us: https://ents.ca/contact/
 CUT;
+    }
+}
+
+class AdminMasterControlController extends Am_Mvc_Controller_Grid
+{
+    protected $layout = 'admin/user-layout.phtml';
+
+    public function checkAdminPermissions(Admin $admin)
+    {
+        return true;
+    }
+
+    function renderStatic(& $out)
+    {
+        $out .= "<p>Hello World</p>";
+    }
+
+    function valuesFromForm(& $values)
+    {
+        if ($values['_type'] == 'debit')
+        {
+            $values['value'] = -1 * $values['value'];
+        }
+
+        $values['user_id'] = $this->user_id;
+    }
+
+    function createForm()
+    {
+        $form = new Am_Form_Admin('credits');
+
+        return $form;
+    }
+
+    function preDispatch()
+    {
+        require_once AM_APPLICATION_PATH . '/default/controllers/AdminUsersController.php';
+        $this->setActiveMenu('users-browse');
+
+        $this->user_id = $this->getInt('user_id');
+        if (!$this->user_id) {
+            throw new Am_Exception_InputError("Invalid URL: Missing user ID");
+        }
+
+        parent::preDispatch();
     }
 }
